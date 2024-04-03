@@ -20,6 +20,9 @@ void rmstack(MultiStack* mstack);
 int move_crates(MultiStack* mstack, int amt, size_t src, size_t dst);
 size_t read_line(FILE* fp, char** buf, size_t* buf_size);
 void parse_line(MultiStack* mstack, char* buf, size_t buf_size);
+void first_puzzle(FILE* fp);
+void second_puzzle(FILE* fp);
+int move_crates_ord(MultiStack* mstack, size_t amt, size_t src, size_t dst);
 
 
 int main(int argc, char** argv)
@@ -38,6 +41,15 @@ int main(int argc, char** argv)
         exit(1);
     }
 
+    first_puzzle(fp);
+    rewind(fp);
+    second_puzzle(fp);
+
+    return EXIT_SUCCESS;
+}
+
+void first_puzzle(FILE* fp)
+{
     size_t buf_size = 0;
     char* buf;
     MultiStack mstack = init_mstack(9);
@@ -57,7 +69,7 @@ int main(int argc, char** argv)
     // reverse multi stack
     rmstack(&mstack);
 
-        for (size_t i = 0; i < mstack.len; i++)
+    for (size_t i = 0; i < mstack.len; i++)
     {
         printf("%zu: %c", i + 1, mstack.multi_stack[i][0]);
         for (size_t j = 1; j < mstack.col_idx[i]; j++)
@@ -65,9 +77,9 @@ int main(int argc, char** argv)
         printf("\n");
     }
 
-    char tok1[4];
-    char tok2[4];
-    char tok3[4];
+    char tok1[10];
+    char tok2[10];
+    char tok3[10];
     int quantity = 0, idx1 = 0, idx2 = 0;
     while (fscanf(fp, "%s %d %s %d %s %d\n", tok1, &quantity, tok2, &idx1, tok3, &idx2) != EOF)
     {
@@ -90,10 +102,63 @@ int main(int argc, char** argv)
 
     res[idx] = '\0';
     printf("%s\n", res);
-
-    return EXIT_SUCCESS;
 }
 
+void second_puzzle(FILE* fp)
+{
+    size_t buf_size = 0;
+    char* buf;
+    MultiStack mstack = init_mstack(9);
+
+    while (read_line(fp, &buf, &buf_size))
+    {
+        printf("%s\n", buf);
+        if (buf[0] == '[')
+        {
+            // Now parse the line
+            parse_line(&mstack, buf, buf_size);
+        }
+
+        free(buf);
+    }
+
+    // reverse multi stack
+    rmstack(&mstack);
+
+    for (size_t i = 0; i < mstack.len; i++)
+    {
+        printf("%zu: %c", i + 1, mstack.multi_stack[i][0]);
+        for (size_t j = 1; j < mstack.col_idx[i]; j++)
+            printf(", %c", mstack.multi_stack[i][j]);
+        printf("\n");
+    }
+
+    char tok1[10];
+    char tok2[10];
+    char tok3[10];
+    size_t quantity = 0, idx1 = 0, idx2 = 0;
+    while (fscanf(fp, "%s %zu %s %zu %s %zu\n", tok1, &quantity, tok2, &idx1, tok3, &idx2) != EOF)
+    {
+        printf("quantity: %zu, idx1: %zu idx2: %zu\n", quantity, idx1 - 1, idx2 - 1);
+        printf("col1 idx: %zu\n", mstack.col_idx[idx1 - 1]);
+        printf("col2 idx: %zu\n", mstack.col_idx[idx2 - 1]);
+        if (move_crates_ord(&mstack, quantity,  idx1 - 1,  idx2 - 1))
+            exit(1);
+    }
+
+    char res[10];
+    size_t idx = 0;
+    for (size_t i = 0; i < mstack.len; i++)
+    {
+        if (mstack.col_idx[i])
+        {
+            res[idx++] = mstack.multi_stack[i][mstack.col_idx[i] - 1];
+        }
+    }
+
+    res[idx] = '\0';
+    printf("%s\n", res);
+}
 
 MultiStack init_mstack(size_t len)
 {
@@ -155,6 +220,19 @@ int move_crates(MultiStack* mstack, int amt, size_t src, size_t dst)
             return 1;
     }
 
+    return 0;
+}
+
+int move_crates_ord(MultiStack* mstack, size_t amt, size_t src, size_t dst)
+{
+    size_t src_idx = mstack->col_idx[src];
+    for (size_t i = src_idx - amt; i < src_idx; i++)
+    {
+        if (push_at(mstack, mstack->multi_stack[src][i], dst))
+            return 1;
+        mstack->multi_stack[src][i] = '\0';
+    }
+    mstack->col_idx[src] = src_idx - amt;
     return 0;
 }
 
