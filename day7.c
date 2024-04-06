@@ -20,16 +20,17 @@ typedef struct {
 
 typedef struct {
     DirNode **buf;
-    size_t buf_sz;
-    size_t idx;
+    size_t cap;
+    size_t len;
 } DirNodeStack;
 
 void init_dir_node(DirNode *dn, DirNode *parent, char *name);
 void display_dir_node(DirNode *dn);
 DirNode *find_child(DirNode *root, char *target);
 void add_child(DirNode *root, DirNode *child);
+unsigned long long walk_tree(DirNode *root, unsigned long long *res);
 
-size_t read_line(FILE *fp, char **buf, size_t *buf_sz);
+char *read_line(FILE *fp, size_t *len);
 char *get_node_name(char *buf);
 void get_command(char *buf, char **cmd, char **target);
 
@@ -63,9 +64,9 @@ int main(int argc, char **argv)
     }
 
     // Read first line
-    size_t buf_sz = 16;
-    char *buf = (char*) malloc(buf_sz);
-    if (!read_line(fp, &buf, &buf_sz))
+    size_t buf_sz;
+    char *buf = read_line(fp, &buf_sz);
+    if (!buf)
     {
         fprintf(stderr, "error reading from file \n");
         exit(1);
@@ -80,12 +81,9 @@ int main(int argc, char **argv)
     push(&stack, root);
     DirNode *cur = root;
 
-    free(buf);
-    buf_sz = 16;
-    buf = (char*) malloc(buf_sz);
-
-    while (read_line(fp, &buf, &buf_sz))
+    while ((buf = read_line(fp, &buf_sz)))
     {
+//        printf("%s\n", buf);
         if (buf[0] == '$')
         {
             char *cmd;
@@ -115,8 +113,9 @@ int main(int argc, char **argv)
         }
         else if (buf[0] == 'd')
         {
+
             char *temp = strtok(buf, " ");
-            free(temp);
+            (void) temp;
             char *dir_name = strtok(NULL, " ");
 
             DirNode *child = (DirNode *) malloc(sizeof(DirNode));
@@ -139,57 +138,63 @@ int main(int argc, char **argv)
         }
     }
 
+    unsigned long long res = 0;
+    (void) walk_tree(root, &res);
+
+    printf("%llu\n", res);
+
 
     return EXIT_SUCCESS;
 }
 
-size_t read_line(FILE *fp, char **buf, size_t *buf_sz)
+char *read_line(FILE *fp, size_t *len)
 {
+    *len = 32;
+    char *buf = (char*) malloc(*len);
     size_t buf_idx = 0;
     int cur_char;
 
     while ((cur_char = fgetc(fp)) != EOF)
     {
-        if (buf_idx == *buf_sz)
+        if (buf_idx == *len)
         {
-            *buf_sz *= 2;
-            char *new = (char*) realloc(*buf, *buf_sz);
-            if (!new)
+            *len *= 2;
+            char *new_buf = (char*) realloc(buf, *len);
+            if (!new_buf)
             {
                 fprintf(stderr, "%s:%s:%d error reallocating buffer\n", __FILE__, __FUNCTION__, __LINE__);
-                return 0;
+                return NULL;
             }
-
-            *buf = new;
+            buf = new_buf;
         }
 
         if (cur_char == '\n')
             break;
 
-        (*buf)[buf_idx++] = (char) cur_char;
+        buf[buf_idx++] = (char) cur_char;
     }
 
     if (ferror(fp))
     {
-        fprintf(stderr, "%s:%s:%d error reading from file\n", __FILE__, __FUNCTION__, __LINE__);
-        return 0;
-    } else if (!buf_idx)
-        return 0;
-
-    if (buf_idx == *buf_sz)
+        fprintf(stderr, "%s:%s:%d error reading file\n", __FILE__, __FUNCTION__, __LINE__);
+        return NULL;
+    }
+    else if (!buf_idx)
     {
-        char *new = (char*) realloc(*buf, buf_idx + 1);
-        if (!new)
-        {
-            fprintf(stderr, "%s:%s:%d error reallocating buffer\n", __FILE__, __FUNCTION__, __LINE__);
-            return 0;
-        }
-        *buf = new;
+        return NULL;
     }
 
-    (*buf)[buf_idx] = '\0';
-    *buf_sz = buf_idx;
-    return buf_idx;
+    char *new_buf = (char*) realloc(buf, buf_idx + 1);
+    if (!new_buf)
+    {
+        fprintf(stderr, "%s:%s:%d error reallocating buffer\n", __FILE__, __FUNCTION__, __LINE__);
+        return NULL;
+    }
+
+    buf = new_buf;
+    buf[buf_idx] = '\0';
+    *len = buf_idx;
+    return buf;
 }
 
 void init_dir_node(DirNode *dn, DirNode *parent, char *name)
@@ -235,6 +240,20 @@ void add_child(DirNode *root, DirNode *child)
     root->children[root->idx++] = (struct DirNode *) child;
 }
 
+unsigned long long walk_tree(DirNode *root, unsigned long long *res)
+{
+    unsigned long long root_sz = root->sz;
+    for (size_t i = 0; i < root->idx; i++)
+    {
+        root_sz += walk_tree((DirNode*) (root->children[i]), res);
+    }
+
+    if (root_sz <= 100000)
+        *res += root_sz;
+
+    return root_sz;
+}
+
 void display_dir_node(DirNode *dn)
 {
     printf("name: %s\nsize: %llu\nparent: %p\nchildren size: %zu\n", dn->name, dn->sz, dn->parent, dn->children_sz);
@@ -242,22 +261,22 @@ void display_dir_node(DirNode *dn)
 
 void init_dir_node_stack(DirNodeStack *stack)
 {
-    stack->buf_sz = 32;
+    stack->cap = 32;
     stack->buf = (DirNode**) malloc(32 * sizeof(DirNode*));
-    stack->idx = 0;
+    stack->len = 0;
 }
 
 bool is_empty(DirNodeStack *stack)
 {
-    return !stack->idx;
+    return !stack->len;
 }
 
 void push(DirNodeStack *stack, DirNode *node)
 {
-    if (stack->idx == stack->buf_sz)
+    if (stack->len == stack->cap)
     {
-        stack->buf_sz *= 2;
-        DirNode **new_buf = (DirNode**) realloc(stack->buf, stack->buf_sz * sizeof(DirNode*));
+        stack->cap *= 2;
+        DirNode **new_buf = (DirNode**) realloc(stack->buf, stack->cap * sizeof(DirNode*));
         if (!new_buf)
         {
             fprintf(stderr, "%s:%s:%d error reallocating buffer\n", __FILE__, __FUNCTION__, __LINE__);
@@ -267,31 +286,34 @@ void push(DirNodeStack *stack, DirNode *node)
         stack->buf = new_buf;
     }
 
-    stack->buf[stack->idx++] = node;
+    stack->buf[stack->len++] = node;
 }
 
 DirNode *pop(DirNodeStack *stack)
 {
     if (is_empty(stack))
         return NULL;
-    DirNode *res = stack->buf[stack->idx];
-    stack->buf[stack->idx--] = NULL;
+    DirNode *res = stack->buf[stack->len - 1];
+    stack->buf[--stack->len] = NULL;
     return res;
 }
 
 DirNode *top(DirNodeStack *stack)
 {
     if (!is_empty(stack))
-        return stack->buf[stack->idx];
+    {
+        DirNode* top = stack->buf[stack->len - 1];
+        return top;
+    }
     return NULL;
 }
 
 char *get_node_name(char *buf)
 {
     char *tok1 =  strtok(buf, " ");
-    free(tok1);
+    (void) tok1;
     char *tok2 = strtok(NULL, " ");
-    free(tok2);
+    (void) tok2;
     char *tok3 = strtok(NULL, " ");
     return tok3;
 }
@@ -299,7 +321,7 @@ char *get_node_name(char *buf)
 void get_command(char *buf, char **cmd, char **target)
 {
     char *tok1 = strtok(buf, " ");
-    free(tok1);
+    (void) tok1;
     *cmd = strtok(NULL, " ");
     *target = strtok(NULL, " ");
 }
