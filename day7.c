@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <limits.h>
 
 
 typedef struct {
@@ -29,6 +30,8 @@ void display_dir_node(DirNode *dn);
 DirNode *find_child(DirNode *root, char *target);
 void add_child(DirNode *root, DirNode *child);
 unsigned long long walk_tree(DirNode *root, unsigned long long *res);
+unsigned long long total_tree_size(DirNode *root);
+unsigned long long find_min_directory(DirNode *root, unsigned long long total_size, unsigned long long *min_size);
 
 char *read_line(FILE *fp, size_t *len);
 char *get_node_name(char *buf);
@@ -83,7 +86,6 @@ int main(int argc, char **argv)
 
     while ((buf = read_line(fp, &buf_sz)))
     {
-//        printf("%s\n", buf);
         if (buf[0] == '$')
         {
             char *cmd;
@@ -143,6 +145,11 @@ int main(int argc, char **argv)
 
     printf("%llu\n", res);
 
+    unsigned long long total_size = total_tree_size(root);
+    unsigned long long dir = ULONG_LONG_MAX;
+    (void) find_min_directory(root, total_size, &dir);
+
+    printf("%llu\n", dir);
 
     return EXIT_SUCCESS;
 }
@@ -254,6 +261,28 @@ unsigned long long walk_tree(DirNode *root, unsigned long long *res)
     return root_sz;
 }
 
+unsigned long long total_tree_size(DirNode *root)
+{
+    unsigned long long res = root->sz;
+    for (size_t i = 0; i < root->idx; i++)
+    {
+        res += total_tree_size((DirNode *) root->children[i]);
+    }
+    return res;
+}
+
+unsigned long long find_min_directory(DirNode *root, unsigned long long total_size, unsigned long long *min_size)
+{
+    unsigned long long res = root->sz;
+    for (size_t i = 0; i < root->idx; i++)
+        res += find_min_directory((DirNode *) root->children[i], total_size, min_size);
+
+    if (70000000 + res - total_size >= 30000000 && res < *min_size)
+        *min_size = res;
+
+    return res;
+}
+
 void display_dir_node(DirNode *dn)
 {
     printf("name: %s\nsize: %llu\nparent: %p\nchildren size: %zu\n", dn->name, dn->sz, dn->parent, dn->children_sz);
@@ -325,6 +354,7 @@ void get_command(char *buf, char **cmd, char **target)
     *cmd = strtok(NULL, " ");
     *target = strtok(NULL, " ");
 }
+
 
 
 
