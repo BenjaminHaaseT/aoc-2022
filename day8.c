@@ -14,11 +14,16 @@ typedef struct {
 
 void init_stack(stack *s);
 void destroy_stack(stack *s);
-void push(stack *s);
-int pop(stack *s);
+void push(stack *s, int val);
+int top(stack *s);
 int is_empty(stack *s);
 
 int *read_line(FILE *fp, size_t *buf_sz);
+int search_row_forward(int **grid, int ***visited, size_t row_len, size_t col_len, size_t row);
+int search_row_reverse(int **grid, int ***visited, size_t row_len, size_t col_len, size_t row);
+int search_col_forward(int **grid, int ***visited, size_t row_len, size_t col_len, size_t col);
+int search_col_reverse(int **grid, int ***visited, size_t row_len, size_t col_len, size_t col);
+
 
 int main(int argc, char **argv)
 {
@@ -68,16 +73,49 @@ int main(int argc, char **argv)
 
     row_len = grid_idx;
 
+//    for (size_t i = 0; i < row_len; i++)
+//    {
+//        printf("%d", grid[i][0]);
+//        for (size_t j = 1; j < col_len; j++)
+//        {
+//            printf(", %d", grid[i][j]);
+//        }
+//
+//        printf("\n");
+//    }
+
+    // for keeping track of what cells we have visited
+    int **visited = (int **) malloc(row_len * sizeof(int *));
+    for (size_t i = 0; i < row_len; i++)
+        visited[i] = calloc(col_len, sizeof(int));
+
+    int res = 0;
     for (size_t i = 0; i < row_len; i++)
     {
-        printf("%d", grid[i][0]);
+        int forward_res = search_row_forward(grid, &visited, row_len, col_len, i);
+        int reverse_res = search_row_reverse(grid, &visited, row_len, col_len, i);
+        printf("row: %zu\n", i);
+        printf("\tforward result: %d\n", forward_res);
+        printf("\treverse result: %d\n", reverse_res);
+    }
+
+    for (size_t j = 0; j < col_len; j++)
+        res += search_col_forward(grid, &visited, row_len, col_len, j) +
+                search_col_reverse(grid, &visited, row_len, col_len, j);
+
+    printf("total number of trees visible from edges: %d\n", res);
+
+    for (size_t i = 0; i < row_len; i++)
+    {
+        printf("%d", visited[i][0]);
         for (size_t j = 1; j < col_len; j++)
         {
-            printf(", %d", grid[i][j]);
+            printf(", %d", visited[i][j]);
         }
-
         printf("\n");
     }
+
+    return EXIT_SUCCESS;
 }
 
 int *read_line(FILE *fp, size_t *buf_sz)
@@ -129,4 +167,133 @@ int *read_line(FILE *fp, size_t *buf_sz)
     buf = resized_buf;
     *buf_sz = buf_idx;
     return buf;
+}
+
+int search_row_forward(int **grid, int ***visited, size_t row_len, size_t col_len, size_t row)
+{
+    stack s;
+    init_stack(&s);
+    int res = 0;
+    for (size_t col = 0; col < col_len; col++)
+    {
+        if ((row == 0 || col == 0 || row == row_len - 1 || col == col_len - 1))
+        {
+            (*visited)[row][col] = 1;
+            res++;
+            push(&s, grid[row][col]);
+        }
+    }
+    destroy_stack(&s);
+    return res;
+}
+
+int search_row_reverse(int **grid, int ***visited, size_t row_len, size_t col_len, size_t row)
+{
+    stack s;
+    init_stack(&s);
+    int res = 0;
+    for (size_t col = col_len - 1; col > 0; col--)
+    {
+        if ((is_empty(&s) || top(&s) < grid[row][col]) && !((*visited)[row][col]))
+        {
+            (*visited)[row][col] = 1;
+            res++;
+            push(&s, grid[row][col]);
+        }
+    }
+
+    if ((is_empty(&s) || top(&s) < grid[row][0]) && !((*visited)[row][0]))
+    {
+        (*visited)[row][0] = 1;
+        res++;
+        push(&s, grid[row][0]);
+    }
+
+    destroy_stack(&s);
+    return res;
+}
+
+int search_col_forward(int **grid, int ***visited, size_t row_len, size_t col_len, size_t col)
+{
+    stack s;
+    init_stack(&s);
+    int res = 0;
+    for (size_t row = 0; row < row_len; row++)
+    {
+        if ((is_empty(&s) || top(&s) < grid[row][col]) && !((*visited)[row][col]))
+        {
+            (*visited)[row][col] = 1;
+            res++;
+            push(&s, grid[row][col]);
+        }
+    }
+    destroy_stack(&s);
+    return res;
+}
+
+int search_col_reverse(int **grid, int ***visited, size_t row_len, size_t col_len, size_t col)
+{
+    stack s;
+    init_stack(&s);
+    int res = 0;
+    for (size_t row = row_len - 1; row > 0; row--)
+    {
+        if ((is_empty(&s) || top(&s) < grid[row][col]) && !((*visited)[row][col]))
+        {
+            (*visited)[row][col] = 1;
+            res++;
+            push(&s, grid[row][col]);
+        }
+    }
+
+    if ((is_empty(&s) || top(&s) < grid[0][col]) && !((*visited)[0][col]))
+    {
+        (*visited)[0][col] = 1;
+        res++;
+        push(&s, grid[0][col]);
+    }
+
+    destroy_stack(&s);
+    return res;
+}
+
+void init_stack(stack *s)
+{
+    s->cap = 32;
+    s->len = 0;
+    s->buf = (int*) malloc(s->cap * sizeof(int));
+}
+
+int is_empty(stack *s)
+{
+    return !s->len;
+}
+
+int top(stack *s)
+{
+    return s->buf[s->len - 1];
+}
+
+void push(stack *s, int val)
+{
+    if (s->len == s->cap)
+    {
+        // reallocate buffer
+        s->cap *= 2;
+        int *new_buf = (int*) realloc(s->buf, s->cap * sizeof(int));
+        if (!new_buf)
+        {
+            fprintf(stderr, "%s:%s:%d error reallocating stack buffer\n", __FILE__, __FUNCTION__, __LINE__);
+            return;
+        }
+
+        s->buf = new_buf;
+    }
+
+    s->buf[s->len++] = val;
+}
+
+void destroy_stack(stack *s)
+{
+    free(s->buf);
 }
