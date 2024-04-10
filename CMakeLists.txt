@@ -11,4 +11,5 @@ add_executable(aoc main.c
         day5.c
         day6.c
         day7.c
-        day8.c)
+        day8.c
+        day9.c)
