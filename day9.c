@@ -206,13 +206,6 @@ int *get_tail_pos(int* tail, int** head, int d_row, int d_col, int* row_min, int
     }
 
     ASSERT((manhatten_dist(neo_tail[0], neo_tail[1], (*head)[0], (*head)[1]) <= 1));
-//    int neo_dist = manhatten_dist(neo_tail[0], neo_tail[1], (*head)[0], (*head)[1]);
-//    if (neo_dist > 1)
-//    {
-//        fprintf(stderr, "neo_tail: %d, %d, head: %d, %d\n", neo_tail[0], neo_tail[1], (*head)[0], (*head)[1]);
-//        fprintf(stderr, "%s:%s:%d neo_tail does not have manhatten distance less than or equal to 1\n", __FILE__, __FUNCTION__, __LINE__);
-//        exit(4);
-//    }
 
     *row_min = min(*row_min, neo_tail[0]);
     *row_max = max(*row_max, neo_tail[0]);
