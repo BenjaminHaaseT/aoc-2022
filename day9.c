@@ -151,7 +151,9 @@ void update_child_pos(int** child, const int* parent, int d_row, int d_col, int 
         }
     }
 
-    ASSERT((manhatten_dist((*child)[0], (*child)[1], parent[0], parent[1]) <= 1));
+    // Ensure distance is correct
+    dist = manhatten_dist((*child)[0], (*child)[1], parent[0], parent[1]);
+    ASSERT((dist <= 1 || dist == 2 && iabs((*child)[0], parent[0]) == 1 && iabs((*child)[1], parent[1]) == 1));
 }
 
 int *get_child_pos(int* child, int* parent, int d_row, int d_col, int* row_min, int* row_max, int* col_min, int* col_max)
@@ -183,7 +185,8 @@ int *get_child_pos(int* child, int* parent, int d_row, int d_col, int* row_min, 
             neo_child[1] = child[1] - 1;
     }
 
-    ASSERT((manhatten_dist(neo_child[0], neo_child[1], parent[0], parent[1]) <= 1));
+    dist = manhatten_dist(neo_child[0], neo_child[1], parent[0], parent[1]);
+    ASSERT((dist <= 1 || (dist == 2 && iabs(neo_child[0], parent[0]) == 1 && iabs(neo_child[1], parent[1]) == 1)));
 
     *row_min = min(*row_min, neo_child[0]);
     *row_max = max(*row_max, neo_child[0]);
@@ -358,7 +361,6 @@ void part2(FILE *fp)
             int d_col_prime = d_col;
             for (int j = 8; j > 0; j--)
             {
-                printf("j: %d, child: %d, %d, parent: %d, %d\n", j, rope_coords[j][0], rope_coords[j][1], rope_coords[j + 1][0], rope_coords[j + 1][1]);
                 int next_d_row = 0;
                 int next_d_col = 0;
                 update_child_pos(rope_coords + j, rope_coords[j + 1], d_row_prime, d_col_prime, &next_d_row, &next_d_col);
@@ -372,7 +374,7 @@ void part2(FILE *fp)
                 if (tail_coords_len == tail_coords_cap)
                 {
                     tail_coords_cap *= 2;
-                    int **new_tail_coords = (int**) realloc(tail_coords, tail_coords_cap * sizeof(int));
+                    int **new_tail_coords = (int**) realloc(tail_coords, tail_coords_cap * sizeof(int*));
                     if (!new_tail_coords)
                     {
                         fprintf(stderr, "%s:%s:%d error reallocating buffer for tail coordinates\n", __FILE__, __FUNCTION__, __LINE__);
@@ -399,12 +401,15 @@ void part2(FILE *fp)
 
     int row_offset = row_min < 0 ? -row_min : 0;
     int col_offset = col_min < 0 ? -col_min : 0;
+    printf("row_offset: %d\n", row_offset);
+    printf("col_offset: %d\n", col_offset);
     int m = row_max + row_offset + 1;
     int n = col_max + col_offset + 1;
 
-    int **visited = (int**) malloc(m * sizeof(int*));
+    int **visited = (int**)malloc(m * sizeof(int*));
     for (int i = 0; i < m; i++)
-        visited[i] = (int*) calloc(n, sizeof(int));
+        visited[i] = (int*)calloc(n, sizeof(int));
+
 
     int total = 0;
     for (int i = 0; i < tail_coords_len; i++)
