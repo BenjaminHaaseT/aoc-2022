@@ -115,6 +115,12 @@ build CMakeFiles/aoc.dir/day10.c.o: C_COMPILER__aoc_unscanned_Debug /Users/benja
   OBJECT_DIR = CMakeFiles/aoc.dir
   OBJECT_FILE_DIR = CMakeFiles/aoc.dir
 
+build CMakeFiles/aoc.dir/day11.c.o: C_COMPILER__aoc_unscanned_Debug /Users/benjaminhaase/development/Personal/aoc/day11.c || cmake_object_order_depends_target_aoc
+  DEP_FILE = CMakeFiles/aoc.dir/day11.c.o.d
+  FLAGS = -g -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -fcolor-diagnostics
+  OBJECT_DIR = CMakeFiles/aoc.dir
+  OBJECT_FILE_DIR = CMakeFiles/aoc.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target aoc
@@ -123,7 +129,7 @@ build CMakeFiles/aoc.dir/day10.c.o: C_COMPILER__aoc_unscanned_Debug /Users/benja
 #############################################
 # Link the executable aoc
 
-build aoc: C_EXECUTABLE_LINKER__aoc_Debug CMakeFiles/aoc.dir/main.c.o CMakeFiles/aoc.dir/day1.c.o CMakeFiles/aoc.dir/day2.c.o CMakeFiles/aoc.dir/day3.c.o CMakeFiles/aoc.dir/day4.c.o CMakeFiles/aoc.dir/day5.c.o CMakeFiles/aoc.dir/day6.c.o CMakeFiles/aoc.dir/day7.c.o CMakeFiles/aoc.dir/day8.c.o CMakeFiles/aoc.dir/day9.c.o CMakeFiles/aoc.dir/day10.c.o
+build aoc: C_EXECUTABLE_LINKER__aoc_Debug CMakeFiles/aoc.dir/main.c.o CMakeFiles/aoc.dir/day1.c.o CMakeFiles/aoc.dir/day2.c.o CMakeFiles/aoc.dir/day3.c.o CMakeFiles/aoc.dir/day4.c.o CMakeFiles/aoc.dir/day5.c.o CMakeFiles/aoc.dir/day6.c.o CMakeFiles/aoc.dir/day7.c.o CMakeFiles/aoc.dir/day8.c.o CMakeFiles/aoc.dir/day9.c.o CMakeFiles/aoc.dir/day10.c.o CMakeFiles/aoc.dir/day11.c.o
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk
   OBJECT_DIR = CMakeFiles/aoc.dir
   POST_BUILD = :
