@@ -1,0 +1,9 @@
+# ninja log v5
+0	46	1712361699246059034	CMakeFiles/aoc.dir/main.c.o	8c6e20ea2f736b58
+0	48	1712361699247106936	CMakeFiles/aoc.dir/day1.c.o	83c5454c31554792
+0	49	1712361699249897894	CMakeFiles/aoc.dir/day3.c.o	bdc08ffac6ebb59e
+1	51	1712361699253231095	CMakeFiles/aoc.dir/day5.c.o	8348856f5b3f830f
+0	46	1712361699246167616	CMakeFiles/aoc.dir/day2.c.o	78e1d30d59d25f78
+46	81	1712361699283012823	CMakeFiles/aoc.dir/day6.c.o	961e5da291ed79ee
+1	49	1712361699250413179	CMakeFiles/aoc.dir/day4.c.o	1f41a816cb8a13f7
+47	81	1712361699281840382	CMakeFiles/aoc.dir/day7.c.o	ab4a0e7fa6acc2dd
